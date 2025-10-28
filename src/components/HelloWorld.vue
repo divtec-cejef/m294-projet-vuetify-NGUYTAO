@@ -61,6 +61,8 @@
 </template>
 
 <script setup>
+  import { useBackgroundColor } from 'vuetify/lib/composables/color.js'
+
   const links = [
     {
       href: 'https://vuetifyjs.com/',
