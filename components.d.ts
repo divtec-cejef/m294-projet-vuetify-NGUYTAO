@@ -9,7 +9,10 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
+    AppHeader: typeof import('./src/components/AppHeader.vue')['default']
+    BarreFiltre: typeof import('./src/components/BarreFiltre.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
+    PersonnageCard: typeof import('./src/components/PersonnageCard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }
