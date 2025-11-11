@@ -1,38 +1,39 @@
 <template>
   <v-app>
-    <!-- Header -->
+    <!-- Header de l'application -->
     <AppHeader />
 
-    <!-- Contenu principal -->
+    <!-- Contenu principal de la page -->
     <v-main>
       <v-container>
-        <!-- Barre de recherche / tri / filtres -->
+        <!-- Barre de recherche, tri et filtres -->
         <BarreFiltre
-          v-model:search="search"
-          v-model:sortOption="sortOption"
-          v-model:showFavoritesOnly="showFavoritesOnly"
-          :sortOptions="sortOptions"
+          v-model:search="search"                <!-- Liaison de la valeur de recherche -->
+        v-model:sortOption="sortOption"        <!-- Liaison de l'option de tri -->
+        v-model:showFavoritesOnly="showFavoritesOnly" <!-- Filtrer uniquement les favoris -->
+        :sortOptions="sortOptions"             <!-- Options disponibles pour le tri -->
         />
 
-        <!-- Liste des personnages -->
+        <!-- Liste des personnages sous forme de grille -->
         <v-row>
           <v-col
-            v-for="(person, index) in filteredPeople"
-            :key="index"
-            cols="12"
-            md="4"
-            sm="6"
+            v-for="(person, index) in filteredPeople" <!-- Parcours des personnages filtrés -->
+          :key="index"
+          cols="12"
+          md="4"
+          sm="6"
           >
-            <PersonnageCard
-              :personnage="person"
-              :favorites="favorites"
-              @toggle-favorite="toggleFavorite"
-              @select-personnage="openDetail"
-            />
+          <!-- Carte individuelle pour chaque personnage -->
+          <PersonnageCard
+            :personnage="person"           <!-- Données du personnage -->
+          :favorites="favorites"         <!-- Liste des favoris -->
+          @toggle-favorite="toggleFavorite" <!-- Gestion des favoris -->
+          @select-personnage="openDetail"   <!-- Ouvrir le détail du personnage -->
+          />
           </v-col>
         </v-row>
 
-        <!-- Message si aucun résultat -->
+        <!-- Message affiché si aucun personnage ne correspond -->
         <v-alert
           v-if="filteredPeople.length === 0"
           class="text-center mt-4"
@@ -41,7 +42,7 @@
           Aucun personnage ne correspond à votre recherche.
         </v-alert>
 
-        <!-- Modal de détail -->
+        <!-- Modal affichant les détails d'un personnage sélectionné -->
         <v-dialog v-model="detailDialog" max-width="500">
           <v-card v-if="selectedPerson">
             <v-card-title class="text-h6">{{ selectedPerson.name }}</v-card-title>
@@ -50,6 +51,7 @@
               <p>Taille : {{ selectedPerson.height }} cm</p>
               <p>Cheveux : {{ selectedPerson.hair_color }}</p>
               <p>Peau : {{ selectedPerson.skin_color }}</p>
+              <!-- Vérifie si le personnage a une race connue -->
               <p v-if="selectedPerson.speciesNames && selectedPerson.speciesNames.length > 0">
                 Race : {{ selectedPerson.speciesNames.join(', ') }}
               </p>
@@ -67,72 +69,78 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useAppStore } from '@/stores/app.js'
-import AppHeader from '@/components/AppHeader.vue'
-import BarreFiltre from '@/components/BarreFiltre.vue'
-import PersonnageCard from '@/components/PersonnageCard.vue'
+import { ref, computed, onMounted } from 'vue'           // Import des fonctionnalités de Vue
+import { useAppStore } from '@/stores/app.js'           // Import du store Pinia
+import AppHeader from '@/components/AppHeader.vue'      // Import du composant Header
+import BarreFiltre from '@/components/BarreFiltre.vue'  // Import de la barre de filtre
+import PersonnageCard from '@/components/PersonnageCard.vue' // Import de la carte personnage
 
-// Pinia store
+// Utilisation du store Pinia
 const store = useAppStore()
 
-// États principaux
-const people = ref([])
-const search = ref('')
-const sortOption = ref(null)
-const showFavoritesOnly = ref(false)
-const favorites = ref([])
+// Déclarations des états réactifs
+const people = ref([])               // Liste de tous les personnages
+const search = ref('')               // Valeur de recherche
+const sortOption = ref(null)         // Option de tri sélectionnée
+const showFavoritesOnly = ref(false) // Filtrer uniquement les favoris
+const favorites = ref([])            // Liste des personnages favoris
 
-// Modal et personnage sélectionné
-const selectedPerson = ref(null)
-const detailDialog = ref(false)
+// Gestion du modal et du personnage sélectionné
+const selectedPerson = ref(null)     // Personnage actuellement sélectionné
+const detailDialog = ref(false)      // Ouverture/fermeture du modal
 
-// Options de tri
+// Options de tri disponibles pour l'utilisateur
 const sortOptions = [
   { title: 'ordre alphabétique (A → Z)', value: 'az' },
   { title: 'ordre alphabétique (Z → A)', value: 'za' },
   { title: 'Favoris', value: 'fav' },
 ]
 
-// Initialisation store et chargement des personnages
+// Initialisation du store et récupération des personnages à l'affichage
 onMounted(async () => {
-  await store.init()
-  people.value = store.personnage
+  await store.init()                 // Appel de la fonction d'initialisation du store
+  people.value = store.personnage    // Chargement des personnages depuis le store
 })
 
-// Gestion favoris
+// Fonction pour vérifier si un personnage est dans les favoris
 function isFavorite(person) {
   return favorites.value.some(fav => fav.name === person.name)
 }
 
+// Fonction pour ajouter ou retirer un personnage des favoris
 function toggleFavorite(person) {
   if (isFavorite(person)) {
+    // Retirer des favoris si déjà présent
     favorites.value = favorites.value.filter(fav => fav.name !== person.name)
   } else {
+    // Ajouter aux favoris si absent
     favorites.value.push(person)
   }
 }
 
-// Filtrage et tri
+// Filtrage et tri des personnages affichés
 const filteredPeople = computed(() => {
-  let list = [...people.value]
+  let list = [...people.value] // Copie de la liste originale
 
+  // Filtrage par recherche
   if (search.value) {
     list = list.filter(p => p.name.toLowerCase().includes(search.value.toLowerCase()))
   }
 
+  // Filtrage pour ne garder que les favoris
   if (showFavoritesOnly.value) {
     list = list.filter(p => isFavorite(p))
   }
 
+  // Tri selon l'option choisie
   switch (sortOption.value) {
-    case 'az':
+    case 'az': // Tri alphabétique A → Z
       list.sort((a, b) => a.name.localeCompare(b.name))
       break
-    case 'za':
+    case 'za': // Tri alphabétique Z → A
       list.sort((a, b) => b.name.localeCompare(a.name))
       break
-    case 'fav':
+    case 'fav': // Tri par favoris (favoris en premier)
       list.sort((a, b) => {
         const aFav = isFavorite(a)
         const bFav = isFavorite(b)
@@ -144,23 +152,23 @@ const filteredPeople = computed(() => {
   return list
 })
 
-// Ouvrir le détail via le store
+// Fonction pour ouvrir le modal de détail d'un personnage
 async function openDetail(person) {
-  const speciesNames = await store.trouverRace(person)
-  selectedPerson.value = { ...person, speciesNames }
-  detailDialog.value = true
+  const speciesNames = await store.trouverRace(person) // Récupère la race via le store
+  selectedPerson.value = { ...person, speciesNames }   // Enregistre le personnage sélectionné
+  detailDialog.value = true                             // Ouvre le modal
 }
 </script>
 
 <style scoped>
 /* Animation douce au survol des cartes */
 .v-card {
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease; /* Transition pour effet zoom */
 }
 .v-card:hover {
-  transform: scale(1.03);
+  transform: scale(1.03);         /* Agrandissement léger au survol */
 }
 .cursor-pointer {
-  cursor: pointer;
+  cursor: pointer;                /* Curseur pointeur pour les éléments cliquables */
 }
 </style>
